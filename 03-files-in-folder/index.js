@@ -9,14 +9,15 @@ fs.readdir(secretFolderPath, {withFileTypes: true}, (err, results) => {
       else { 
         if (result.isFile()) {
             const pathToFile = path.join(__dirname, "secret-folder", result.name);
-            const fileName = path.basename(pathToFile);
             const extension = path.extname(pathToFile);
             const extensionResult = extension.replace('.', '');
+            const fileName = path.basename(pathToFile);
+            const fileNameResult = fileName.replace(`.${extensionResult}`, '')
 
         fs.stat(pathToFile, (err, stats) => {
             if (err) console.log(err); 
             else {
-            console.log(`${fileName} - ${extensionResult} - ${stats.size / 1000}kb`);
+            console.log(`${fileNameResult} - ${extensionResult} - ${stats.size / 1000}kb`);
             }
         })
         }
