@@ -21,7 +21,7 @@ const pathResult = path.join(__dirname, "text.txt");
 const pathFile = fs.createWriteStream(pathResult); //creates the file
 stdout.write('Hi, hope you are having a wonderful day! Please enter some text, it will be put into your newly created text file\n');
 stdin.on("data", (data) => {
-    if (data.toString().includes('exit')) {
+    if (data.toString().trim() === 'exit') {
         process.exit();
     }
     pathFile.write(data);
