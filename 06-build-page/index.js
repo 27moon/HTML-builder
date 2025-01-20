@@ -121,3 +121,31 @@ function linkStyles() {
     });
   });
 }
+
+const originalPath = path.join(__dirname, 'assets');
+const newPath = path.join(projectDistPath, 'assets');
+
+async function copyAssets(originalPath, copyPath) {
+  //just delete everything
+  await fsPromises.rm(copyPath, { force: true, recursive: true });
+  
+  let allFiles = await fsPromises.readdir(originalPath, {
+    withFileTypes: true,
+  });
+  // console.log(allFiles);
+  allFiles.forEach(async (file) => {
+    await fsPromises.mkdir(copyPath, { recursive: true });
+    // console.log(file);
+    let fileOrigPath = path.join(originalPath, file.name);
+    let fileNewPath = path.join(copyPath, file.name);
+
+    if (file.isFile()) {
+      await fsPromises.copyFile(fileOrigPath, fileNewPath);
+    }
+    if (file.isDirectory()) {
+      copyAssets(fileOrigPath, fileNewPath);
+    }
+  });
+}
+
+copyAssets(originalPath, newPath);
