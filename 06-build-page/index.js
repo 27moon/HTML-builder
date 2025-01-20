@@ -121,6 +121,3 @@ function linkStyles() {
     });
   });
 }
-
-const originalPath = path.join(__dirname, 'assets');
-const newPath = path.join(projectDistPath, 'assets');
