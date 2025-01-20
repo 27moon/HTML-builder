@@ -6,102 +6,121 @@
 // // Use the script written in task 05-merge-styles to create the style.css file.
 // // Use the script from task 04-copy-directory to move the assets folder into the project-dist folder.
 
+const fs = require('fs');
+const path = require('path');
+const fsPromises = require('fs').promises;
 
-// const fs = require("fs");
-// const path = require("path");
-// const fsPromises = fs.promises;
+const projectDistPath = path.join(__dirname, 'project-dist');
 
-// const newFolderPath = path.join(__dirname, "project-dist");
-// const assetsPath = path.join(__dirname, "assets");
-// const assetsFolderPath = path.join(__dirname, "project-dist", "assets")
+const pathTemplate = path.join(__dirname, 'template.html');
 
-// function createFolder() { //project-dist
+const componentsFolderPath = path.join(__dirname, 'components');
 
-//       fs.mkdir(newFolderPath, (err) => {
-//         if (err) {
-//             console.log('');
-//         }
-//       });
-//     }
-//     createFolder();
+// streamTemplate.on('data', (data) => console.log(data));
 
-// const origTemplateHTMLPath = path.join(__dirname, "template.html");
-// const newHTMLPath = path.join(__dirname, "project-dist", "index.html");
-// const componentsFolderPath = path.join(__dirname, "components");
-// const componentsFolderPathArticles = path.join(__dirname, "components", "articles.html");
-// const componentsFolderPathFooter = path.join(__dirname, "components", "footer.html");
-// const componentsFolderPathHeader = path.join(__dirname, "components", "header.html");
+function check() {
+  fs.access(projectDistPath, async function (error) {
+    console.log(projectDistPath);
+    if (error) {
+      //   console.log("") проверка на наличие новой папки
+      fs.access(projectDistPath, async (err) => {
+        //создаем новую папку
+        if (err) {
+          fs.mkdir(projectDistPath, (err) => {
+            createHTMLPage();
+            if (err) {
+              console.log('');
+            }
+          });
+        }
+      });
+    } else {
+      createHTMLPage();
+      await fsPromises.readdir(
+        projectDistPath,
+        { recursive: true },
+        async (err, files) => {
+          if (err) throw err;
+          for (const file of files) {
+            // files.forEach(file => {
+            await fsPromises.unlink(path.join(projectDistPath, file), (err) => {
+              //delete the past files
+              if (err) throw err;
+              createHTMLPage();
+            });
+          }
+        },
+      );
+    }
+  });
+}
+check();
 
+const createHTMLPage = () => {
+  fs.stat(projectDistPath, (err) => {
+    if (err) console.log(err);
+    else {
+      fs.createWriteStream(path.join(projectDistPath, 'index.html'));
+      rewriteHTML();
+      linkStyles();
+    }
+  });
+};
 
-    
-// async function pasteArticles(){
-//     fs.readFile(origTemplateHTMLPath, 'utf8', function (err,data) {
-//         // if (err) {
-//         //   return console.log(err);
-//         // }
-     
-//         fsPromises.readFile(componentsFolderPathArticles, 'utf8', function (err, dataArticles) {
-//         if (err) {
-//           return console.log(err);
-//         }
-//         // console.log(dataArticles)
-    
-    
-//         let result = data.replace(/{{articles}}/g, dataArticles);
-      
-//         fs.writeFile(origTemplateHTMLPath, result, function (err) {
-//            if (err) return console.log(err);
-//         });
-//     })
-//       });
-// }
+async function rewriteHTML() {
+  let template = '';
+  fs.readFile(pathTemplate, 'utf-8', (err, data) => {
+    template = data;
+    // console.log(template);
+  });
+  const pathIdexHTML = path.join(__dirname, 'project-dist', 'index.html');
+  fs.readdir(componentsFolderPath, { withFileTypes: true }, (err, results) => {
+    results.forEach(async (result) => {
+      if (err) console.log(err);
+      else {
+        if (result.isFile()) {
+          const pathToFile = path.join(__dirname, 'components', result.name);
+          const extension = path.extname(pathToFile);
+          if (extension === '.html') {
+            const dataFromComponent = await fs.promises.readFile(
+              pathToFile,
+              'utf-8',
+            );
+            // console.log(dataFromComponent);
+            let txtInParenthesis = result.name.slice(0, -5);
+            template = template.replace(
+              `{{${txtInParenthesis}}}`,
+              dataFromComponent,
+            );
+            fsPromises.writeFile(pathIdexHTML, template);
+          }
+        }
+      }
+    });
+  });
+}
 
+function linkStyles() {
+  const stylesFolderPath = path.join(__dirname, 'styles');
+  const bundlePath = path.join(__dirname, 'project-dist', 'style.css');
 
-// async function pasteFooter() {
-//   //footer
-//   await fsPromises.readFile(origTemplateHTMLPath, 'utf8', function (err,data) {
-//     if (err) {
-//       return console.log(err);
-//     }
- 
-//     fsPromises.readFile(componentsFolderPathFooter, 'utf8', function (err, dataFooter) {
-//     if (err) {
-//       return console.log(err);
-//     }
-//     // console.log(dataFooter)
+  const createStream = fs.createWriteStream(bundlePath);
 
+  fs.readdir(stylesFolderPath, { withFileTypes: true }, (err, results) => {
+    results.forEach((result) => {
+      if (err) console.log(err);
+      else {
+        if (result.isFile()) {
+          const pathToFile = path.join(__dirname, 'styles', result.name);
+          const extension = path.extname(pathToFile);
+          if (extension === '.css') {
+            fs.createReadStream(pathToFile, 'utf-8').pipe(createStream);
+          }
+        }
+      }
+    });
+  });
+}
 
-//     let result = data.replace(/{{footer}}/g, dataFooter);
-  
-//     fs.writeFile(origTemplateHTMLPath, result, function (err) {
-//        if (err) return console.log(err);
-//     });
-// })
-//   });
-// }
-
-
-// async function pasteHeader() {
-
-// //header
-//  fs.readFile(origTemplateHTMLPath, 'utf8', function (err,data) {
-//     if (err) {
-//       return console.log(err);
-//     }
- 
-//     fs.readFile(componentsFolderPathHeader, 'utf8', function (err, dataHeader) {
-//     if (err) {
-//       return console.log(err);
-//     }
-//     // console.log(dataHeader)
-
-
-//     let result = data.replace(/{{header}}/g, dataHeader);
-  
-//     fs.writeFile(origTemplateHTMLPath, result, function (err) {
-//        if (err) return console.log(err);
-//     });
-// })
-//   });
-// }
-
+const originalPath = path.join(__dirname, 'assets');
+const newPath = path.join(projectDistPath, 'assets');
